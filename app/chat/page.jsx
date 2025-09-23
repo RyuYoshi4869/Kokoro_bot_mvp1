@@ -36,8 +36,11 @@ export default function ChatPage() {
   return (
     <div style={{ minHeight: "100vh", display: "flex", justifyContent: "center", padding: 16 }}>
       <div style={{ width: "100%", maxWidth: 720 }}>
-        <h1 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>こころBot</h1>
-        <p style={{ color: "#6b7280", marginBottom: 12 }}>子育て中のママに寄り添う共感チャット</p>
+       <h1 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8 }}>ようこそ、こころBotへ。</h1>
+        <p style={{ color: "#6b7280", marginBottom: 12 }}>
+        子育ての夜も昼も、匿名で安心して気持ちを言葉にできる場所です。
+        </p>
+
 
         <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
           <input
@@ -55,7 +58,7 @@ export default function ChatPage() {
         </div>
 
         <div style={{ border: "1px solid #e5e7eb", borderRadius: 10, padding: 12, height: "60vh", overflowY: "auto", background: "#fff" }}>
-          {messages.length === 0 && <div style={{ color: "#6b7280" }}>メッセージを入力して送信してください。</div>}
+          {messages.length === 0 && <div style={{ color: "#6b7280" }}>こころbot チャット。</div>}
           {messages.map((m, i) => (
             <div key={i} style={{ display: "flex", justifyContent: m.role === "user" ? "flex-end" : "flex-start", margin: "8px 0" }}>
               <div style={{
