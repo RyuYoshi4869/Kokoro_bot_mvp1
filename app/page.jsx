@@ -4,32 +4,32 @@ export default function Home() {
   return (
     <main style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: 24 }}>
       <div style={{ width: "100%", maxWidth: 820 }}>
-        {/* 見出し＋補足 */}
-        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 12 }}>
+        <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 12, color: "#b91c1c" }}>
           ようこそ、こころBotへ。
         </h1>
         <p style={{ fontSize: 16, color: "#4b5563", marginBottom: 24 }}>
           子育ての夜も昼も、匿名で安心して気持ちを言葉にできる場所です。
         </p>
 
-        {/* CTAボタン */}
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 32 }}>
           <Link href="/chat" style={{
-            background: "#111", color: "#fff", padding: "12px 16px", borderRadius: 8, textDecoration: "none", fontWeight: 600
+            background: "#f472b6", color: "#fff", padding: "12px 16px", borderRadius: 8, textDecoration: "none", fontWeight: 600
           }}>
             はじめる
           </Link>
           <Link href="/chat" style={{
-            background: "#f3f4f6", color: "#111", padding: "12px 16px", borderRadius: 8, textDecoration: "none", fontWeight: 600, border: "1px solid #e5e7eb"
+            background: "#f9a8d4", color: "#111", padding: "12px 16px", borderRadius: 8, textDecoration: "none", fontWeight: 600, border: "1px solid #f472b6"
           }}>
             今すぐ話してみる
           </Link>
           <Link href="/how-to" style={{
-            background: "transparent", color: "#111", padding: "12px 16px", borderRadius: 8, textDecoration: "none", fontWeight: 600, border: "1px solid #e5e7eb"
+            background: "transparent", color: "#b91c1c", padding: "12px 16px", borderRadius: 8, textDecoration: "none", fontWeight: 600, border: "1px solid #fca5a5"
           }}>
             使い方を見る
           </Link>
         </div>
+      </div>
+    </main>
 
         {/* 概要（こころBotとは？） */}
         <section style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 20 }}>
