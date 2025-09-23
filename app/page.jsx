@@ -28,8 +28,6 @@ export default function Home() {
             使い方を見る
           </Link>
         </div>
-      </div>
-    </main>
 
         {/* 概要（こころBotとは？） */}
         <section style={{ background: "#fff", border: "1px solid #e5e7eb", borderRadius: 12, padding: 20 }}>
@@ -49,3 +47,4 @@ export default function Home() {
     </main>
   );
 }
+
