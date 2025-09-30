@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServerSupabase } from "../../../lib/supabaseServer";
+import { createServerSupabase } from "@/lib/supabaseServer";
 
 const MAX_LEN = 2000;
 const ALLOWED_ROLES = new Set(["user", "assistant"]);
