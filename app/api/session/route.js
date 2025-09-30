@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
-import { createServerSupabase } from "@/lib/supabaseServer";
-
+import { createServerSupabase } from "../../../lib/supabaseServer";
 export async function POST(req) {
   try {
     const { action, session_id, anon_user_id } = await req.json();
