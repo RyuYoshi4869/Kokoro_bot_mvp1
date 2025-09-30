@@ -20,22 +20,40 @@ function ensurePosthog() {
 export default function SurveyPage() {
   const [anxiety, setAnxiety] = useState(0); // 1..5
   const [retention, setRetention] = useState(null); // true/false
+  const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
     ensurePosthog();
   }, []);
 
-  function submit() {
+  async function submit() {
+    if (submitting) return;
+    setSubmitting(true);
+
     const session_id = getSessionIdLS();
-    // 終了イベント
+
+    // PostHog: 終了 & アンケ
     posthog.capture("session_end_clicked", { session_id });
-    // アンケイベント
     posthog.capture("survey_submitted", {
       session_id,
       anxiety_score: anxiety || null,
       retention_intent: retention,
     });
+
+    // Supabase: セッション終了（存在する場合のみ）
+    try {
+      if (session_id) {
+        await fetch("/api/session", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ action: "end", session_id }),
+        });
+      }
+    } catch (_) {
+      // ログ保存失敗はUXを止めない（PostHog側で検知できるのでOK）
+    }
+
     router.push("/thank-you");
   }
 
@@ -98,15 +116,17 @@ export default function SurveyPage() {
       <div style={{ display: "flex", gap: 8 }}>
         <button
           onClick={submit}
+          disabled={submitting}
           style={{
             padding: "10px 16px",
             borderRadius: 8,
             background: "#f472b6",
             color: "#fff",
             fontWeight: 700,
+            opacity: submitting ? 0.6 : 1,
           }}
         >
-          送信する
+          {submitting ? "送信中…" : "送信する"}
         </button>
         <Link
           href="/chat"
