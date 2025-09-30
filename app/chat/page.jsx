@@ -1,8 +1,19 @@
+// app/chat/page.jsx
 "use client";
 import { useEffect, useMemo, useRef, useState } from "react";
+import Link from "next/link";
 import posthog from "posthog-js";
 
-// --- 匿名ユーザーIDをlocalStorageに保持 ---
+// ---- 共通ユーティリティ ----
+function ensurePosthog() {
+  if (!posthog.__loaded) {
+    posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY || "", {
+      api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
+      capture_pageview: false,
+      capture_pageleave: false,
+    });
+  }
+}
 function getAnonUserId() {
   const KEY = "kororo_anon_user_id";
   if (typeof window === "undefined") return "anon";
@@ -13,42 +24,52 @@ function getAnonUserId() {
   }
   return id;
 }
+const SESSION_KEY = "kororo_session_id";
+function setSessionIdLS(id) {
+  if (typeof window !== "undefined") localStorage.setItem(SESSION_KEY, id);
+}
+function getSessionIdLS() {
+  if (typeof window === "undefined") return null;
+  return localStorage.getItem(SESSION_KEY);
+}
 
 export default function ChatPage() {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // --- PostHog init（初回） ---
+  // init
   useEffect(() => {
-    if (!posthog.__loaded) {
-      posthog.init(process.env.NEXT_PUBLIC_POSTHOG_KEY || "", {
-        api_host: process.env.NEXT_PUBLIC_POSTHOG_HOST || "https://us.i.posthog.com",
-        capture_pageview: false,
-        capture_pageleave: false
-      });
-    }
+    ensurePosthog();
   }, []);
 
-  // --- 匿名ユーザー & セッション（クライアントで生成） ---
   const anonUserId = useMemo(() => getAnonUserId(), []);
-  const sessionIdRef = useRef(crypto.randomUUID());
-  const turnsRef = useRef(0); // assistant返信回数＝ラリー数
+  const sessionIdRef = useRef(getSessionIdLS() || crypto.randomUUID());
+  const turnsRef = useRef(0); // assistant 返信回数（=ラリー数）
 
-  // --- セッション開始イベント ---
+  // セッション開始を必ず1回送る（初回入力時でもOKだがここで送る）
   useEffect(() => {
-    posthog.capture("session_started", {
-      session_id: sessionIdRef.current,
-      anon_user_id: anonUserId
-    });
-    // ページ離脱時の保険（session_end_clicked代替）
+    ensurePosthog();
+    // セッションIDを保存（surveyで使う）
+    setSessionIdLS(sessionIdRef.current);
+
+    // 二重送信防止用フラグ
+    const FLAG = "kororo_session_started_sent";
+    if (!sessionStorage.getItem(FLAG)) {
+      posthog.capture("session_started", {
+        session_id: sessionIdRef.current,
+        anon_user_id: anonUserId,
+      });
+      sessionStorage.setItem(FLAG, "1");
+    }
+
+    // 離脱保険
     const onLeave = () => {
       posthog.capture("session_end_clicked", { session_id: sessionIdRef.current });
     };
     window.addEventListener("beforeunload", onLeave);
     return () => window.removeEventListener("beforeunload", onLeave);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [anonUserId]);
 
   async function sendMessage() {
     const text = input.trim();
@@ -59,7 +80,7 @@ export default function ChatPage() {
     setMessages((m) => [...m, { role: "user", content: text }]);
     posthog.capture("message_sent", {
       session_id: sessionIdRef.current,
-      role: "user"
+      role: "user",
     });
 
     setLoading(true);
@@ -67,8 +88,7 @@ export default function ChatPage() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        // userId / sessionId は現状使わないので送らない
-        body: JSON.stringify({ message: text })
+        body: JSON.stringify({ message: text }),
       });
       const data = await res.json();
       if (data.error) throw new Error(data.error);
@@ -77,10 +97,10 @@ export default function ChatPage() {
       setMessages((m) => [...m, { role: "assistant", content: data.reply }]);
       posthog.capture("message_sent", {
         session_id: sessionIdRef.current,
-        role: "assistant"
+        role: "assistant",
       });
 
-      // ラリー（assistant返信）を加算して5到達を検知
+      // ラリー到達判定
       turnsRef.current += 1;
       if (turnsRef.current === 5) {
         posthog.capture("turns_reached_5", { session_id: sessionIdRef.current });
@@ -88,48 +108,11 @@ export default function ChatPage() {
     } catch (e) {
       setMessages((m) => [
         ...m,
-        {
-          role: "assistant",
-          content: "エラーが発生しました。時間をおいて再度お試しください。"
-        }
+        { role: "assistant", content: "エラーが発生しました。時間をおいて再度お試しください。" },
       ]);
     } finally {
       setLoading(false);
     }
-  }
-
-  // --- 終了ボタン押下：アンケ表示→送信 ---
-  const [showSurvey, setShowSurvey] = useState(false);
-  const [anxiety, setAnxiety] = useState(0); // 1-5
-  const [retention, setRetention] = useState(null); // true/false/null
-
-  function openSurvey() {
-    setShowSurvey(true);
-  }
-
-  function submitSurvey() {
-    posthog.capture("session_end_clicked", {
-      session_id: sessionIdRef.current
-    });
-    if (anxiety > 0 || retention !== null) {
-      posthog.capture("survey_submitted", {
-        session_id: sessionIdRef.current,
-        anxiety_score: anxiety || null,
-        retention_intent: retention
-      });
-    }
-    // 新しいセッションを開始（リセット）
-    sessionIdRef.current = crypto.randomUUID();
-    turnsRef.current = 0;
-    setShowSurvey(false);
-    setMessages((m) => [...m, { role: "assistant", content: "ご利用ありがとうございました。必要なときは、いつでも声をかけてくださいね。" }]);
-    // 次セッション開始イベント
-    posthog.capture("session_started", {
-      session_id: sessionIdRef.current,
-      anon_user_id: anonUserId
-    });
-    setAnxiety(0);
-    setRetention(null);
   }
 
   return (
@@ -146,15 +129,18 @@ export default function ChatPage() {
         <div
           style={{
             border: "1px solid #f9a8d4",
-            borderRadius: 10,
+            borderRadius: 16,
             padding: 12,
             height: "60vh",
             overflowY: "auto",
-            background: "#fff0f6"
+            background: "#fff",
+            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
           }}
         >
           {messages.length === 0 && (
-            <div style={{ color: "#9ca3af" }}>メッセージを入力して送信してください。</div>
+            <div style={{ color: "#9ca3af", textAlign: "center", marginTop: "30%" }}>
+              ここに気持ちを入力してみてください 🌸
+            </div>
           )}
           {messages.map((m, i) => (
             <div
@@ -162,17 +148,20 @@ export default function ChatPage() {
               style={{
                 display: "flex",
                 justifyContent: m.role === "user" ? "flex-end" : "flex-start",
-                margin: "8px 0"
+                margin: "8px 0",
               }}
             >
               <div
                 style={{
                   maxWidth: "80%",
-                  padding: "8px 12px",
-                  borderRadius: 16,
-                  background: m.role === "user" ? "#f472b6" : "#ffe4e6",
+                  padding: "10px 14px",
+                  borderRadius: m.role === "user" ? "16px 16px 0 16px" : "16px 16px 16px 0",
+                  background:
+                    m.role === "user"
+                      ? "linear-gradient(135deg,#f472b6,#f9a8d4)"
+                      : "#ffe4e6",
                   color: m.role === "user" ? "#fff" : "#111",
-                  boxShadow: "0 1px 3px rgba(0,0,0,0.1)"
+                  boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
                 }}
               >
                 {m.content}
@@ -182,14 +171,23 @@ export default function ChatPage() {
         </div>
 
         {/* 入力欄 */}
-        <div style={{ display: "flex", gap: 8, marginTop: 12 }}>
+        <div
+          style={{
+            display: "flex",
+            gap: 8,
+            marginTop: 12,
+            background: "#fff0f6",
+            borderRadius: 12,
+            padding: 8,
+          }}
+        >
           <input
             style={{
               flex: 1,
               border: "1px solid #f9a8d4",
-              borderRadius: 6,
-              padding: "8px 10px",
-              background: "#fff"
+              borderRadius: 8,
+              padding: "10px 12px",
+              background: "#fff",
             }}
             placeholder="ここに入力（Enterで送信）"
             value={input}
@@ -202,133 +200,40 @@ export default function ChatPage() {
             onClick={sendMessage}
             disabled={loading}
             style={{
-              padding: "8px 16px",
-              borderRadius: 6,
+              padding: "10px 16px",
+              borderRadius: 8,
               background: "#f472b6",
               color: "#fff",
-              opacity: loading ? 0.6 : 1
+              opacity: loading ? 0.6 : 1,
+              fontWeight: 600,
             }}
           >
             {loading ? "送信中…" : "送信"}
           </button>
-          <button
-            onClick={openSurvey}
-            style={{
-              padding: "8px 16px",
-              borderRadius: 6,
-              background: "transparent",
-              border: "1px solid #f9a8d4",
-              color: "#b91c1c"
-            }}
-            title="セッションを終了してアンケートに回答"
-          >
-            終了
-          </button>
         </div>
 
-        {/* ミニアンケ モーダル（超シンプル実装） */}
-        {showSurvey && (
-          <div
+        {/* アンケート遷移ボタン（入力欄の下・下部寄せ） */}
+        <div style={{ marginTop: 20, display: "flex", justifyContent: "center" }}>
+          <Link
+            href="/survey"
+            onClick={() => {
+              // 念のため現セッションIDを保存しておく
+              setSessionIdLS(sessionIdRef.current);
+            }}
             style={{
-              position: "fixed",
-              inset: 0,
-              background: "rgba(0,0,0,0.25)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: 16
+              display: "inline-block",
+              padding: "12px 16px",
+              borderRadius: 8,
+              background: "#f472b6",
+              color: "#fff",
+              textDecoration: "none",
+              fontWeight: 700,
+              boxShadow: "0 2px 6px rgba(0,0,0,0.08)",
             }}
           >
-            <div
-              style={{
-                width: "100%",
-                maxWidth: 420,
-                background: "#fff",
-                borderRadius: 12,
-                border: "1px solid #f3f4f6",
-                padding: 16
-              }}
-            >
-              <h2 style={{ fontSize: 18, fontWeight: 700, marginBottom: 8 }}>ご利用ありがとうございました</h2>
-              <p style={{ color: "#374151", marginBottom: 12 }}>
-                2つだけ教えてください（任意）。今後の改善に使います。
-              </p>
-
-              <label style={{ display: "block", marginBottom: 8 }}>
-                安心して話せたと感じましたか？（1〜5）
-              </label>
-              <div style={{ display: "flex", gap: 8, marginBottom: 12, flexWrap: "wrap" }}>
-                {[1, 2, 3, 4, 5].map((n) => (
-                  <button
-                    key={n}
-                    onClick={() => setAnxiety(n)}
-                    style={{
-                      padding: "8px 10px",
-                      borderRadius: 8,
-                      border: anxiety === n ? "2px solid #f472b6" : "1px solid #e5e7eb",
-                      background: anxiety === n ? "#ffe4e6" : "#fff"
-                    }}
-                  >
-                    {n}
-                  </button>
-                ))}
-              </div>
-
-              <label style={{ display: "block", marginBottom: 8 }}>
-                また使いたいと思いますか？（はい / いいえ）
-              </label>
-              <div style={{ display: "flex", gap: 8, marginBottom: 16 }}>
-                <button
-                  onClick={() => setRetention(true)}
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: 8,
-                    border: retention === true ? "2px solid #f472b6" : "1px solid #e5e7eb",
-                    background: retention === true ? "#ffe4e6" : "#fff"
-                  }}
-                >
-                  はい
-                </button>
-                <button
-                  onClick={() => setRetention(false)}
-                  style={{
-                    padding: "8px 10px",
-                    borderRadius: 8,
-                    border: retention === false ? "2px solid #f472b6" : "1px solid #e5e7eb",
-                    background: retention === false ? "#ffe4e6" : "#fff"
-                  }}
-                >
-                  いいえ
-                </button>
-              </div>
-
-              <div style={{ display: "flex", gap: 8, justifyContent: "flex-end" }}>
-                <button
-                  onClick={() => setShowSurvey(false)}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: 8,
-                    border: "1px solid #e5e7eb",
-                    background: "#fff"
-                  }}
-                >
-                  キャンセル
-                </button>
-                <button
-                  onClick={submitSurvey}
-                  style={{
-                    padding: "8px 12px",
-                    borderRadius: 8,
-                    background: "#f472b6",
-                    color: "#fff"
-                  }}
-                >
-                  送信して終了
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+            チャットを終了してアンケートに答える
+          </Link>
+        </div>
       </div>
     </div>
   );
