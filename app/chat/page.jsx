@@ -38,7 +38,7 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // init
+  // PostHog init
   useEffect(() => {
     ensurePosthog();
   }, []);
@@ -47,23 +47,60 @@ export default function ChatPage() {
   const sessionIdRef = useRef(getSessionIdLS() || crypto.randomUUID());
   const turnsRef = useRef(0); // assistant 返信回数（=ラリー数）
 
-  // セッション開始を必ず1回送る（初回入力時でもOKだがここで送る）
+  // --- Supabase保存用: セッション開始APIを呼ぶ ---
+  async function startSessionIfNeeded() {
+    // 一度だけ送る
+    const FLAG = "kororo_session_started_sent_db";
+    if (sessionStorage.getItem(FLAG)) return;
+    try {
+      await fetch("/api/session", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          action: "start",
+          session_id: sessionIdRef.current,
+          anon_user_id: anonUserId,
+        }),
+      });
+      sessionStorage.setItem(FLAG, "1");
+    } catch {}
+  }
+
+  // --- Supabase保存用: メッセージ保存API ---
+  async function saveLog(role, content) {
+    try {
+      await fetch("/api/log", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          session_id: sessionIdRef.current,
+          role,
+          content,
+        }),
+      });
+    } catch {}
+  }
+
+  // セッション開始（PostHog + DB）
   useEffect(() => {
     ensurePosthog();
     // セッションIDを保存（surveyで使う）
     setSessionIdLS(sessionIdRef.current);
 
-    // 二重送信防止用フラグ
-    const FLAG = "kororo_session_started_sent";
-    if (!sessionStorage.getItem(FLAG)) {
+    // PostHog側は一度だけ
+    const PH_FLAG = "kororo_session_started_sent_ph";
+    if (!sessionStorage.getItem(PH_FLAG)) {
       posthog.capture("session_started", {
         session_id: sessionIdRef.current,
         anon_user_id: anonUserId,
       });
-      sessionStorage.setItem(FLAG, "1");
+      sessionStorage.setItem(PH_FLAG, "1");
     }
 
-    // 離脱保険
+    // DB側も開始を記録
+    startSessionIfNeeded();
+
+    // 離脱保険（PostHog）
     const onLeave = () => {
       posthog.capture("session_end_clicked", { session_id: sessionIdRef.current });
     };
@@ -76,12 +113,17 @@ export default function ChatPage() {
     if (!text) return;
     setInput("");
 
-    // UI反映＋イベント（user）
+    // ユーザー発言（UI反映）
     setMessages((m) => [...m, { role: "user", content: text }]);
+
+    // PostHog: user
     posthog.capture("message_sent", {
       session_id: sessionIdRef.current,
       role: "user",
     });
+
+    // Supabase: userログ保存
+    saveLog("user", text);
 
     setLoading(true);
     try {
@@ -93,12 +135,18 @@ export default function ChatPage() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
-      // UI反映＋イベント（assistant）
-      setMessages((m) => [...m, { role: "assistant", content: data.reply }]);
+      // Bot発言（UI反映）
+      const reply = data.reply;
+      setMessages((m) => [...m, { role: "assistant", content: reply }]);
+
+      // PostHog: assistant
       posthog.capture("message_sent", {
         session_id: sessionIdRef.current,
         role: "assistant",
       });
+
+      // Supabase: assistantログ保存
+      saveLog("assistant", reply);
 
       // ラリー到達判定
       turnsRef.current += 1;
@@ -217,7 +265,7 @@ export default function ChatPage() {
           <Link
             href="/survey"
             onClick={() => {
-              // 念のため現セッションIDを保存しておく
+              // 念のため現セッションIDを保存しておく（surveyで使用）
               setSessionIdLS(sessionIdRef.current);
             }}
             style={{
