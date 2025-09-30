@@ -15,17 +15,17 @@ export default function Home() {
         {/* CTAボタン */}
         <div style={{ display: "flex", gap: 12, flexWrap: "wrap", marginBottom: 32 }}>
           <Link href="/chat" style={{
-            background: "#111", color: "#fff", padding: "12px 16px", borderRadius: 8, textDecoration: "none", fontWeight: 600
+            background: "#f472b6", color: "#fff", padding: "12px 16px", borderRadius: 8, textDecoration: "none", fontWeight: 600
           }}>
             はじめる
           </Link>
           <Link href="/chat" style={{
-            background: "#f3f4f6", color: "#111", padding: "12px 16px", borderRadius: 8, textDecoration: "none", fontWeight: 600, border: "1px solid #e5e7eb"
+            background: "#f9a8d4", color: "#111", padding: "12px 16px", borderRadius: 8, textDecoration: "none", fontWeight: 600, border: "1px solid #f472b6"
           }}>
             今すぐ話してみる
           </Link>
           <Link href="/how-to" style={{
-            background: "transparent", color: "#111", padding: "12px 16px", borderRadius: 8, textDecoration: "none", fontWeight: 600, border: "1px solid #e5e7eb"
+            background: "transparent", color: "#b91c1c", padding: "12px 16px", borderRadius: 8, textDecoration: "none", fontWeight: 600, border: "1px solid #fca5a5"
           }}>
             使い方を見る
           </Link>
