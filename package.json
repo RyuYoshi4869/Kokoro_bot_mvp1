@@ -11,8 +11,7 @@
     "next": "15.5.3",
     "react": "19.1.0",
     "react-dom": "19.1.0",
-    "posthog-js": "^1.166.0"
+    "posthog-js": "^1.166.0",
     "@supabase/supabase-js": "^2.47.10"
-
   }
 }
