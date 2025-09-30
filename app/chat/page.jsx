@@ -139,7 +139,7 @@ export default function ChatPage() {
         >
           {messages.length === 0 && (
             <div style={{ color: "#9ca3af", textAlign: "center", marginTop: "30%" }}>
-              ここに気持ちを入力してみてください 🌸
+              こころbotとチャットしてみよう！！
             </div>
           )}
           {messages.map((m, i) => (
@@ -189,7 +189,7 @@ export default function ChatPage() {
               padding: "10px 12px",
               background: "#fff",
             }}
-            placeholder="ここに入力（Enterで送信）"
+            placeholder="ここに気持ちを入力してみてください 🌸（Enterで送信）"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
