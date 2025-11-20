@@ -9,7 +9,7 @@ export default function Home() {
         alignItems: "center",
         justifyContent: "center",
         padding: 24,
-        backgroundColor: "#f9fafb",
+        backgroundColor: "#fff1f2", // やわらかいピンク背景
       }}
     >
       <div
@@ -18,8 +18,8 @@ export default function Home() {
           maxWidth: 720,
           backgroundColor: "#ffffff",
           borderRadius: 16,
-          padding: 24,
-          boxShadow: "0 12px 30px rgba(15, 23, 42, 0.08)",
+          padding: 30,
+          boxShadow: "0 12px 32px rgba(244, 114, 182, 0.18)", // ピンク系の影
         }}
       >
         {/* 見出し */}
@@ -29,7 +29,7 @@ export default function Home() {
             fontWeight: 700,
             marginBottom: 12,
             textAlign: "center",
-            color: "#111827",
+            color: "#be185d", // 少し濃いめのピンク
           }}
         >
           ようこそ、こころBotへ。
@@ -50,7 +50,7 @@ export default function Home() {
           匿名で、やさしく、気持ちを言葉にできる場所です。
         </p>
 
-        {/* シチュエーションの３行 */}
+        {/* シチュエーション３行 */}
         <ul
           style={{
             listStyle: "none",
@@ -67,64 +67,93 @@ export default function Home() {
           <li>少し気持ちを吐き出したいときに</li>
         </ul>
 
-        {/* 説明一文 */}
+        {/* 説明 */}
         <p
           style={{
             fontSize: 13,
             color: "#374151",
             textAlign: "center",
-            marginBottom: 20,
+            marginBottom: 22,
           }}
         >
           AIが1〜3文で、あなたの“こころ”にそっと寄り添います。
         </p>
 
-        {/* CTA ボタン：1つだけ */}
-        <div style={{ display: "flex", justifyContent: "center", marginBottom: 20 }}>
+        {/* CTA ボタン */}
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 24,
+          }}
+        >
+          {/* メイン CTA */}
           <Link
             href="/chat"
             style={{
               display: "inline-flex",
-              alignItems: "center",
               justifyContent: "center",
               padding: "12px 20px",
               borderRadius: 999,
-              background:
-                "linear-gradient(135deg, #fb7185, #f97316)",
+              background: "linear-gradient(135deg, #fb7185, #f472b6)",
               color: "#ffffff",
               fontWeight: 600,
               fontSize: 14,
               textDecoration: "none",
-              boxShadow: "0 8px 20px rgba(248, 113, 113, 0.35)",
               width: "100%",
               maxWidth: 260,
+              boxShadow: "0 8px 24px rgba(244, 114, 182, 0.35)",
             }}
           >
             今すぐ話してみる
           </Link>
+
+          {/* 復活した「使い方を見る」 */}
+          <Link
+            href="/how-to"
+            style={{
+              display: "inline-flex",
+              justifyContent: "center",
+              padding: "10px 18px",
+              borderRadius: 999,
+              backgroundColor: "#ffe4e6",
+              border: "1px solid #f9a8d4",
+              color: "#be185d",
+              fontWeight: 600,
+              fontSize: 13,
+              textDecoration: "none",
+              width: "100%",
+              maxWidth: 260,
+            }}
+          >
+            使い方を見る
+          </Link>
         </div>
 
-        {/* 区切り線 */}
+        {/* 区切り */}
         <hr
           style={{
             border: "none",
-            borderTop: "1px solid #e5e7eb",
+            borderTop: "1px solid #fbcfe8",
             margin: "8px 0 16px",
           }}
         />
 
-        {/* 特徴セクション：短く３点だけ */}
+        {/* 特徴 */}
         <section>
           <h2
             style={{
               fontSize: 15,
               fontWeight: 600,
               marginBottom: 8,
-              color: "#111827",
+              color: "#be185d",
             }}
           >
             こころBotの特徴
           </h2>
+
           <ul
             style={{
               fontSize: 13,
