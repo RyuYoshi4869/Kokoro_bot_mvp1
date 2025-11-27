@@ -49,6 +49,7 @@ export default function ChatPage() {
   async function startSessionIfNeeded() {
     const FLAG = "kororo_session_started_sent_db";
     if (sessionStorage.getItem(FLAG)) return;
+
     try {
       await fetch("/api/session", {
         method: "POST",
@@ -157,7 +158,7 @@ export default function ChatPage() {
           子育ての夜も昼も、匿名で安心して気持ちを言葉にできる場所です。
         </p>
 
-        {/* チャットログ */}
+        {/* ▼ チャットログ（背景を薄い色に変更） */}
         <div
           style={{
             border: "1px solid #f9a8d4",
@@ -165,7 +166,7 @@ export default function ChatPage() {
             padding: 12,
             height: "60vh",
             overflowY: "auto",
-            background: "#fff",
+            background: "#F7F7F8",  // ← 修正点（白→薄いグレー）
             boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
           }}
         >
@@ -204,7 +205,7 @@ export default function ChatPage() {
           ))}
         </div>
 
-        {/* 入力欄 */}
+        {/* ▼ 入力欄（高さをUPし textarea に変更） */}
         <div
           style={{
             display: "flex",
@@ -215,19 +216,26 @@ export default function ChatPage() {
             padding: 8,
           }}
         >
-          <input
+          <textarea
             style={{
               flex: 1,
               border: "1px solid #f9a8d4",
               borderRadius: 8,
-              padding: "10px 12px",
+              padding: "14px 12px",
               background: "#fff",
+              minHeight: "70px",       // ← 高さアップ（スマホで見やすい）
+              fontSize: 15,
+              lineHeight: 1.5,
+              resize: "none",
             }}
-            placeholder="ここに気持ちを入力してみてください 🌸（Enterで送信）"
+            placeholder="ここに気持ちを入力してみてください 🌸"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
-              if (e.key === "Enter") sendMessage();
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                sendMessage();
+              }
             }}
           />
 
@@ -241,13 +249,14 @@ export default function ChatPage() {
               color: "#fff",
               opacity: loading ? 0.6 : 1,
               fontWeight: 600,
+              whiteSpace: "nowrap",
             }}
           >
             {loading ? "送信中…" : "送信"}
           </button>
         </div>
 
-        {/* 🔥 アンケートボタン一時的に非表示（Supabase/Posthogは触らない） */}
+        {/* ▼ アンケートボタンは一時的に非表示 */}
         {/*
         <div style={{ marginTop: 20, display: "flex", justifyContent: "center" }}>
           <Link
