@@ -166,7 +166,7 @@ export default function ChatPage() {
             padding: 12,
             height: "60vh",
             overflowY: "auto",
-            background: "#F7F7F8",
+            background: "#FFF5F8",
             boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
           }}
         >
