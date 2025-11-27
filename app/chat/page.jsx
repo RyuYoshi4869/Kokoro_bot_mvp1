@@ -38,18 +38,15 @@ export default function ChatPage() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // PostHog init
   useEffect(() => {
     ensurePosthog();
   }, []);
 
   const anonUserId = useMemo(() => getAnonUserId(), []);
   const sessionIdRef = useRef(getSessionIdLS() || crypto.randomUUID());
-  const turnsRef = useRef(0); // assistant 返信回数（=ラリー数）
+  const turnsRef = useRef(0);
 
-  // --- Supabase保存用: セッション開始APIを呼ぶ ---
   async function startSessionIfNeeded() {
-    // 一度だけ送る
     const FLAG = "kororo_session_started_sent_db";
     if (sessionStorage.getItem(FLAG)) return;
     try {
@@ -66,7 +63,6 @@ export default function ChatPage() {
     } catch {}
   }
 
-  // --- Supabase保存用: メッセージ保存API ---
   async function saveLog(role, content) {
     try {
       await fetch("/api/log", {
@@ -81,13 +77,10 @@ export default function ChatPage() {
     } catch {}
   }
 
-  // セッション開始（PostHog + DB）
   useEffect(() => {
     ensurePosthog();
-    // セッションIDを保存（surveyで使う）
     setSessionIdLS(sessionIdRef.current);
 
-    // PostHog側は一度だけ
     const PH_FLAG = "kororo_session_started_sent_ph";
     if (!sessionStorage.getItem(PH_FLAG)) {
       posthog.capture("session_started", {
@@ -97,10 +90,8 @@ export default function ChatPage() {
       sessionStorage.setItem(PH_FLAG, "1");
     }
 
-    // DB側も開始を記録
     startSessionIfNeeded();
 
-    // 離脱保険（PostHog）
     const onLeave = () => {
       posthog.capture("session_end_clicked", { session_id: sessionIdRef.current });
     };
@@ -113,19 +104,15 @@ export default function ChatPage() {
     if (!text) return;
     setInput("");
 
-    // ユーザー発言（UI反映）
     setMessages((m) => [...m, { role: "user", content: text }]);
-
-    // PostHog: user
     posthog.capture("message_sent", {
       session_id: sessionIdRef.current,
       role: "user",
     });
 
-    // Supabase: userログ保存
     saveLog("user", text);
-
     setLoading(true);
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
@@ -135,20 +122,16 @@ export default function ChatPage() {
       const data = await res.json();
       if (data.error) throw new Error(data.error);
 
-      // Bot発言（UI反映）
       const reply = data.reply;
       setMessages((m) => [...m, { role: "assistant", content: reply }]);
 
-      // PostHog: assistant
       posthog.capture("message_sent", {
         session_id: sessionIdRef.current,
         role: "assistant",
       });
 
-      // Supabase: assistantログ保存
       saveLog("assistant", reply);
 
-      // ラリー到達判定
       turnsRef.current += 1;
       if (turnsRef.current === 5) {
         posthog.capture("turns_reached_5", { session_id: sessionIdRef.current });
@@ -169,6 +152,7 @@ export default function ChatPage() {
         <h1 style={{ fontSize: 20, fontWeight: 600, marginBottom: 8, color: "#b91c1c" }}>
           ようこそ、こころBotへ。
         </h1>
+
         <p style={{ color: "#6b7280", marginBottom: 12 }}>
           子育ての夜も昼も、匿名で安心して気持ちを言葉にできる場所です。
         </p>
@@ -190,6 +174,7 @@ export default function ChatPage() {
               こころbotとチャットしてみよう！！
             </div>
           )}
+
           {messages.map((m, i) => (
             <div
               key={i}
@@ -203,7 +188,8 @@ export default function ChatPage() {
                 style={{
                   maxWidth: "80%",
                   padding: "10px 14px",
-                  borderRadius: m.role === "user" ? "16px 16px 0 16px" : "16px 16px 16px 0",
+                  borderRadius:
+                    m.role === "user" ? "16px 16px 0 16px" : "16px 16px 16px 0",
                   background:
                     m.role === "user"
                       ? "linear-gradient(135deg,#f472b6,#f9a8d4)"
@@ -244,6 +230,7 @@ export default function ChatPage() {
               if (e.key === "Enter") sendMessage();
             }}
           />
+
           <button
             onClick={sendMessage}
             disabled={loading}
@@ -260,14 +247,12 @@ export default function ChatPage() {
           </button>
         </div>
 
-        {/* アンケート遷移ボタン（入力欄の下・下部寄せ） */}
+        {/* 🔥 アンケートボタン一時的に非表示（Supabase/Posthogは触らない） */}
+        {/*
         <div style={{ marginTop: 20, display: "flex", justifyContent: "center" }}>
           <Link
             href="/survey"
-            onClick={() => {
-              // 念のため現セッションIDを保存しておく（surveyで使用）
-              setSessionIdLS(sessionIdRef.current);
-            }}
+            onClick={() => setSessionIdLS(sessionIdRef.current)}
             style={{
               display: "inline-block",
               padding: "12px 16px",
@@ -282,6 +267,7 @@ export default function ChatPage() {
             チャットを終了してアンケートに答える
           </Link>
         </div>
+        */}
       </div>
     </div>
   );
