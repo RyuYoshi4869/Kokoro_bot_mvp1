@@ -158,7 +158,7 @@ export default function ChatPage() {
           子育ての夜も昼も、匿名で安心して気持ちを言葉にできる場所です。
         </p>
 
-        {/* ▼ チャットログ（背景を薄い色に変更） */}
+        {/* ▼ チャットログ（背景を薄いグレーに） */}
         <div
           style={{
             border: "1px solid #f9a8d4",
@@ -166,16 +166,11 @@ export default function ChatPage() {
             padding: 12,
             height: "60vh",
             overflowY: "auto",
-            background: "#F7F7F8",  // ← 修正点（白→薄いグレー）
+            background: "#F7F7F8",
             boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
           }}
         >
-          {messages.length === 0 && (
-            <div style={{ color: "#9ca3af", textAlign: "center", marginTop: "30%" }}>
-              こころbotとチャットしてみよう！！
-            </div>
-          )}
-
+          {/* ← 空状態テキストは削除しました */}
           {messages.map((m, i) => (
             <div
               key={i}
@@ -205,7 +200,7 @@ export default function ChatPage() {
           ))}
         </div>
 
-        {/* ▼ 入力欄（高さをUPし textarea に変更） */}
+        {/* ▼ 入力欄（文字サイズUP, textarea化） */}
         <div
           style={{
             display: "flex",
@@ -223,9 +218,9 @@ export default function ChatPage() {
               borderRadius: 8,
               padding: "14px 12px",
               background: "#fff",
-              minHeight: "70px",       // ← 高さアップ（スマホで見やすい）
-              fontSize: 15,
-              lineHeight: 1.5,
+              minHeight: "70px",
+              fontSize: 17,         // ← ここ大きくした！（元は15）
+              lineHeight: 1.6,
               resize: "none",
             }}
             placeholder="ここに気持ちを入力してみてください 🌸"
@@ -256,7 +251,7 @@ export default function ChatPage() {
           </button>
         </div>
 
-        {/* ▼ アンケートボタンは一時的に非表示 */}
+        {/* ▼ アンケートボタンは非表示のまま */}
         {/*
         <div style={{ marginTop: 20, display: "flex", justifyContent: "center" }}>
           <Link
