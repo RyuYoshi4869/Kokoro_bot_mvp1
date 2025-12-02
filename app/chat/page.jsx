@@ -158,19 +158,18 @@ export default function ChatPage() {
           子育ての夜も昼も、匿名で安心して気持ちを言葉にできる場所です。
         </p>
 
-        {/* ▼ チャットログ（背景を薄いグレーに） */}
+        {/* ▼ チャットログ（高さを短く & 背景を白に戻す） */}
         <div
           style={{
             border: "1px solid #f9a8d4",
             borderRadius: 16,
             padding: 12,
-            height: "60vh",
+            height: "45vh",          // ← 縦の長さを短く（元 60vh）
             overflowY: "auto",
-            background: "#FFF5F8",
+            background: "#FFFFFF",   // ← 白背景に戻す
             boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
           }}
         >
-          {/* ← 空状態テキストは削除しました */}
           {messages.map((m, i) => (
             <div
               key={i}
@@ -200,7 +199,7 @@ export default function ChatPage() {
           ))}
         </div>
 
-        {/* ▼ 入力欄（文字サイズUP, textarea化） */}
+        {/* ▼ 入力欄 */}
         <div
           style={{
             display: "flex",
@@ -219,7 +218,7 @@ export default function ChatPage() {
               padding: "14px 12px",
               background: "#fff",
               minHeight: "70px",
-              fontSize: 17,         // ← ここ大きくした！（元は15）
+              fontSize: 17,
               lineHeight: 1.6,
               resize: "none",
             }}
@@ -251,7 +250,7 @@ export default function ChatPage() {
           </button>
         </div>
 
-        {/* ▼ アンケートボタンは非表示のまま */}
+        {/* ▼ アンケートボタン（非表示のまま） */}
         {/*
         <div style={{ marginTop: 20, display: "flex", justifyContent: "center" }}>
           <Link
